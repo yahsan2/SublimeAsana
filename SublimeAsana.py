@@ -15,3 +15,5 @@ class GetAsanaTaskCommand(sublime_plugin.TextCommand):
         myspaces = asana_api.get_project_tasks(2128400497714) #Result: [{u'id': 123456789, u'name': u'asanapy'}]
         for myspace in myspaces:
             new_window.insert(edit, 0, str(myspace[u'id'])+': '+myspace[u'name']+'\n')
+
+            
