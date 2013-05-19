@@ -10,7 +10,6 @@ import functools
 
 AsanaProjects = sublime.load_settings('AsanaProjects.sublime-settings')
 
-
 class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def run(self,edit):
