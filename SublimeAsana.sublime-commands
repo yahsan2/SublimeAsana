@@ -1,0 +1,14 @@
+[
+    {
+        "caption": "Asana: Get Tasks",
+        "command": "get_asana_tasks"
+    },
+    {
+        "caption": "Asana: Set Project",
+        "command": "set_asana_project"
+    },
+    {
+        "caption": "Asana: Create Task",
+        "command": "add_asana_task"
+    }
+]
