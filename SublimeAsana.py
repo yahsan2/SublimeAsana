@@ -56,7 +56,7 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def git_commit(self,text):
         sublime.message_dialog(text)
-        self.view.window().run_command('exec', {'cmd': ['git', 'commit', '-am', '\''+text+'\''], 'quiet': False})
+        self.view.window().run_command('exec', {'cmd': ['git', 'commit', '-am', text], 'quiet': False})
 
 
     def on_done(self,name):
