@@ -21,7 +21,6 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
     def run(self,edit,archive = False):
         self.path = self.view.window().folders()[0]
         self.archive = archive
-
         if AsanaProjects.has(self.path):
             project_id = AsanaProjects.get(self.path).get('id')
             project_name = AsanaProjects.get(self.path).get('name')
@@ -81,21 +80,21 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def repo_name(self,message):
         self.story = message
-        thread = CommandThread(['git', 'remote', 'show', '-n', 'origin', '|', 'grep', 'Fetch', '|', 'cut', '-d',':', '-f', 3], self.git_log)
+        thread = CommandThread(['git', 'remote', '-v'], self.git_log)
         thread.start()
         return
 
     def git_log(self,repo):
-        sublime.message_dialog(repo+'aa')
-
-        repo = repo.split('.git')
+        repo = repo.split(':')
+        repo = repo[1].split('.git')
         format = '%s \n %an, %ad \n <a href="https://github.com/'+repo[0]+'/commit/%H">Commit</a>'
         thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.add_story)
         thread.start()
 
     def add_story(self,message):
-        self.story += '\n'+ message
-        sublime.message_dialog(self.story)
+        pass
+        # self.story += '\n'+ message
+        # sublime.message_dialog(self.story)
         # thread = AsanaApiCall('add_story', [int(self.current_task_id),self.story], self.on_done)
         # thread.start()
 
