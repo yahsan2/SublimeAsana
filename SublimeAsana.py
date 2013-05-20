@@ -76,11 +76,6 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
 
     def git_commit(self,message):
-        # self.view.window().run_command('exec', {'cmd': ['cd', self.path], 'quiet': False})
-        # self.view.window().run_command('exec', {'cmd': ['git', 'commit', '-am', message], 'quiet': False})
-        cmd = 'git commit -am \"'+ message+'\"'
-        sublime.message_dialog(cmd)
-
         thread = CommandThread(['git', 'commit', '-am', message], self.done_commit)
         thread.start()
 
