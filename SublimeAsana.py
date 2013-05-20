@@ -76,19 +76,23 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
 
     def git_commit(self,message):
-        thread = CommandThread(['git', 'commit', '-am',message], self.git_log)
+        thread = CommandThread(['git', 'commit', '-am',message], self.repo_name)
         thread.start()
 
-    def git_log(self,message):
+    def repo_name(self,message):
         self.story = message
-        format = 'http://%H - %an, %ad : %s'
-        thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.done_commit)
+        thread = CommandThread(['git', 'remote', 'show', '-n', 'origin', '|', 'grep', 'Fetch', '|', 'cut', '-d:', '-f3'], self.git_log)
+        thread.start()
+        return
+
+    def git_log(self,repo):
+        repo = repo.split('.git')
+        format = '%s\n %an, %ad\n <a href="https://github.com/'+repo[0]+'/commit/%H">Commit</a>'
+        thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.add_story)
         thread.start()
 
-    def done_commit(self,message):
+    def add_story(self,message):
         self.story += '\n'+ message
-        sublime.message_dialog(self.story)
-
         thread = AsanaApiCall('add_story', [int(self.current_task_id),self.story], self.on_done)
         thread.start()
 
