@@ -168,7 +168,8 @@ class AsanaAPI(object):
 
         :param project_id: id# of project
         """
-        return self._asana('projects/%d/tasks' % project_id)
+
+        return self._asana('projects/%d/tasks?opt_fields=completed,name' % project_id)
 
     def list_stories(self, task_id):
         """List stories for task
