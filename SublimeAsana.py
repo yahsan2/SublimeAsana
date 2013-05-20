@@ -81,7 +81,7 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def repo_name(self,message):
         self.story = message
-        thread = CommandThread(['git', 'remote', 'show', '-n', 'origin', '|', 'grep', 'Fetch', '|', 'cut', '-d:', '-f3'], self.git_log)
+        thread = CommandThread(['git', 'remote', 'show', '-n', 'origin', '|', 'grep', 'Fetch', '|', 'cut', '-d',':', '-f', 3], self.git_log)
         thread.start()
         return
 
