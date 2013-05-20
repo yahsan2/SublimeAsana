@@ -88,6 +88,7 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
         repo = repo.split(':')
         repo = repo[1].split('.git')
         format = '%s \n %an, %ad \n <a href="https://github.com/'+repo[0]+'/commit/%H">Commit</a>'
+        sublime.message_dialog(format)
         thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.add_story)
         thread.start()
 
