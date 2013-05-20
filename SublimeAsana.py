@@ -1,8 +1,13 @@
+import os
+
 import sublime
 import sublime_plugin
 
 import threading
+import subprocess
 import functools
+import os.path
+
 
 from asana import asana
 
@@ -28,6 +33,9 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
             thread.start()
         else:
             self.view.window().run_command('set_asana_project')
+
+    def branch_done(self,ls):
+        sublime.message_dialog(str(ls))
 
     def show_quick_panel_task(self,tasks):
         if tasks != 'cache':
@@ -68,8 +76,16 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
 
     def git_commit(self,message):
-        self.view.window().run_command('exec', {'cmd': ['git', 'commit', '-am', message], 'quiet': False})
-        sublime.status_message('Commit: '+message)
+        # self.view.window().run_command('exec', {'cmd': ['cd', self.path], 'quiet': False})
+        # self.view.window().run_command('exec', {'cmd': ['git', 'commit', '-am', message], 'quiet': False})
+        cmd = 'git commit -am \"'+ message+'\"'
+        sublime.message_dialog(cmd)
+
+        thread = CommandThread(['git', 'commit', '-am', message], self.done_commit)
+        thread.start()
+
+    def done_commit(self,message):
+        sublime.message_dialog('Commit: '+message)
 
     def on_done(self,name=False):
         if name :
@@ -140,6 +156,24 @@ class AddAsanaTaskCommand(sublime_plugin.TextCommand):
         self.view.window().run_command('get_asana_tasks')
 
 
+
+
+def main_thread(callback, *args, **kwargs):
+    # sublime.set_timeout gets used to send things onto the main thread
+    # most sublime.[something] calls need to be on the main thread
+    sublime.set_timeout(functools.partial(callback, *args, **kwargs), 0)
+
+def _make_text_safeish(text, fallback_encoding, method='decode'):
+    # The unicode decode here is because sublime converts to unicode inside
+    # insert in such a way that unknown characters will cause errors, which is
+    # distinctly non-ideal... and there's no way to tell what's coming out of
+    # git in output. So...
+    try:
+        unitext = getattr(text, method)('utf-8')
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        unitext = getattr(text, method)(fallback_encoding)
+    return unitext
+
 class AsanaApiCall(threading.Thread):
     def __init__(self,command,args,callback):
         asana_api_key = sublime.active_window().active_view().settings().get('asana_api_key')
@@ -149,39 +183,33 @@ class AsanaApiCall(threading.Thread):
         self.callback = callback
         threading.Thread.__init__(self)
 
-    def main_thread(self,callback, args=False):
-        # sublime.set_timeout gets used to send things onto the main thread
-        # most sublime.[something] calls need to be on the main thread
-        sublime.set_timeout(functools.partial(callback, args), 10)
-
-
     def run(self):
         # try:
             if self.command == 'get_project_tasks':
                 tasks = self.AsanaApi.get_project_tasks(self.args)
-                self.main_thread(self.callback, tasks)
+                main_thread(self.callback, tasks)
 
             elif self.command == 'get_task':
                 projects = self.AsanaApi.get_task(self.args)
-                self.main_thread(self.callback,projects)
+                main_thread(self.callback,projects)
 
             elif self.command == 'get_project_id':
                 projects = self.AsanaApi.list_projects()
-                self.main_thread(self.callback,projects)
+                main_thread(self.callback,projects)
 
             elif self.command == 'create_task':
                 myspaces = self.AsanaApi.list_workspaces()
                 task = self.AsanaApi.create_task(self.args[0], myspaces[1]['id'])
                 self.AsanaApi.add_project_task(task[u'id'], self.args[1])
-                self.main_thread(self.callback,self.args[0])
+                main_thread(self.callback,self.args[0])
 
             elif self.command == 'update_task':
                 task = self.AsanaApi.update_task(self.args[0], self.args[1])
-                self.main_thread(self.callback,task[u'name'])
+                main_thread(self.callback,task[u'name'])
 
             elif self.command == 'done_task':
                 task = self.AsanaApi.update_task(self.args, None, None, None, True)
-                self.main_thread(self.callback,task[u'name'])
+                main_thread(self.callback,task[u'name'])
 
             return
         # except:
@@ -189,5 +217,48 @@ class AsanaApiCall(threading.Thread):
         #     sublime.error_message(err)
         #     self.result = False
 
-
             # self.view.window().run_command('exec', {'cmd': ['sh', 'script.sh'], 'quiet': False})
+class CommandThread(threading.Thread):
+    def __init__(self, command, on_done, working_dir="", fallback_encoding="", **kwargs):
+        threading.Thread.__init__(self)
+        self.command = command
+        self.on_done = on_done
+        self.working_dir = working_dir
+        if "stdin" in kwargs:
+            self.stdin = kwargs["stdin"]
+        else:
+            self.stdin = None
+        if "stdout" in kwargs:
+            self.stdout = kwargs["stdout"]
+        else:
+            self.stdout = subprocess.PIPE
+        self.fallback_encoding = fallback_encoding
+        self.kwargs = kwargs
+
+    def run(self):
+        try:
+            # Per http://bugs.python.org/issue8557 shell=True is required to
+            # get $PATH on Windows. Yay portable code.
+            shell = os.name == 'nt'
+            if self.working_dir != "":
+                os.chdir(self.working_dir)
+
+            proc = subprocess.Popen(self.command,
+                stdout=self.stdout, stderr=subprocess.STDOUT,
+                stdin=subprocess.PIPE,
+                shell=shell, universal_newlines=True)
+            output = proc.communicate(self.stdin)[0]
+            if not output:
+                output = ''
+            # if sublime's python gets bumped to 2.7 we can just do:
+            # output = subprocess.check_output(self.command)
+            main_thread(self.on_done,
+                _make_text_safeish(output, self.fallback_encoding), **self.kwargs)
+        except subprocess.CalledProcessError, e:
+            main_thread(self.on_done, e.returncode)
+        except OSError, e:
+            if e.errno == 2:
+                main_thread(sublime.error_message, "Git binary could not be found in PATH\n\nConsider using the git_command setting for the Git plugin\n\nPATH is: %s" % os.environ['PATH'])
+            else:
+                raise e
+
