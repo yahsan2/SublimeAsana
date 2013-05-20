@@ -87,6 +87,8 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def done_commit(self,message):
         self.story += '\n'+ message
+        sublime.message_dialog(self.story)
+
         thread = AsanaApiCall('add_story', [int(self.current_task_id),self.story], self.on_done)
         thread.start()
 
