@@ -81,13 +81,14 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def git_log(self,message):
         self.story = message
-        format = '\"http://%H - %an, %ad : %s\"'
+        format = 'http://%H - %an, %ad : %s'
         thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.done_commit)
         thread.start()
 
     def done_commit(self,message):
-        self.story += message
-        sublime.message_dialog(self.story)
+        self.story += '\n'+ message
+        thread = AsanaApiCall('add_story', [int(self.current_task_id),self.story], self.on_done)
+        thread.start()
 
     def on_done(self,name=False):
         if name :
@@ -207,6 +208,10 @@ class AsanaApiCall(threading.Thread):
 
             elif self.command == 'update_task':
                 task = self.AsanaApi.update_task(self.args[0], self.args[1])
+                main_thread(self.callback,task[u'name'])
+
+            elif self.command == 'add_story':
+                task = self.AsanaApi.add_story(self.args[0], self.args[1])
                 main_thread(self.callback,task[u'name'])
 
             elif self.command == 'done_task':
