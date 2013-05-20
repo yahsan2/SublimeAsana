@@ -86,7 +86,7 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
         return
 
     def git_log(self,repo):
-        sublime.message_dialog(repo)
+        sublime.message_dialog(repo+'aa')
 
         repo = repo.split('.git')
         format = '%s \n %an, %ad \n <a href="https://github.com/'+repo[0]+'/commit/%H">Commit</a>'
