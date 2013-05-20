@@ -92,7 +92,7 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
         thread.start()
 
     def add_story(self,message):
-        self.story = '\n'+ self.story + '\n'+ message
+        self.story = '.\n'+ self.story + '\n'+ message
         thread = AsanaApiCall('add_story', [int(self.current_task_id),self.story], self.on_done)
         thread.start()
 
@@ -218,7 +218,7 @@ class AsanaApiCall(threading.Thread):
 
             elif self.command == 'add_story':
                 task = self.AsanaApi.add_story(self.args[0], self.args[1])
-                main_thread(self.callback,task[u'name'])
+                main_thread(self.callback,self.args[1])
 
             elif self.command == 'done_task':
                 task = self.AsanaApi.update_task(self.args, None, None, None, True)
