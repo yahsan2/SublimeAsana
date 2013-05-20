@@ -88,7 +88,7 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def done_commit(self,message):
         self.story += message
-        sublime.message_dialog(message)
+        sublime.message_dialog(self.story)
 
     def on_done(self,name=False):
         if name :
