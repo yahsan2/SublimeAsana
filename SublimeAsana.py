@@ -81,10 +81,9 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def git_log(self,message):
         self.story = message
-        format = '\"http://%H - %an, %ar : %s\"'
+        format = '\"http://%H - %an, %ad : %s\"'
         thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.done_commit)
         thread.start()
-
 
     def done_commit(self,message):
         self.story += message
