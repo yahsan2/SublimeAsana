@@ -76,11 +76,19 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
 
     def git_commit(self,message):
-        thread = CommandThread(['git', 'commit', '-am', message], self.done_commit)
+        thread = CommandThread(['git', 'commit', '-am',message], self.git_log)
         thread.start()
 
+    def git_log(self,message):
+        self.story = message
+        format = '\"http://%H - %an, %ar : %s\"'
+        thread = CommandThread(['git', 'log', '--pretty=format:'+format,'-1'], self.done_commit)
+        thread.start()
+
+
     def done_commit(self,message):
-        sublime.message_dialog('Commit: '+message)
+        self.story += message
+        sublime.message_dialog(message)
 
     def on_done(self,name=False):
         if name :
