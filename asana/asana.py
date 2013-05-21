@@ -33,12 +33,15 @@ class AsanaAPI(object):
     def _asana(self, api_target):
         """Peform a GET request
 
-        :param api_target: API URI path for request
+        :param <api_target:></api_target:> API URI path for request
         """
         target = "/".join([self.aurl, api_target])
+
         if self.debug:
             print "-> Calling: %s" % target
-        r = requests.get(target, auth=(self.apikey, ""))
+
+        r = requests.get(target, auth=(self.apikey, ""), verify=False)
+
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
                 return json.loads(r.text)['data']
@@ -61,7 +64,7 @@ class AsanaAPI(object):
             print "-> Posting to: %s" % target
             print "-> Post payload:"
             pprint(data)
-        r = requests.post(target, auth=(self.apikey, ""), data=data)
+        r = requests.post(target, auth=(self.apikey, ""), data=data, verify=False)
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
                 return json.loads(r.text)['data']
@@ -84,7 +87,7 @@ class AsanaAPI(object):
             print "-> PUTting to: %s" % target
             print "-> PUT payload:"
             pprint(data)
-        r = requests.put(target, auth=(self.apikey, ""), data=data)
+        r = requests.put(target, auth=(self.apikey, ""), data=data, verify=False)
         if self._ok_status(r.status_code) and r.status_code is not 404:
             if r.headers['content-type'].split(';')[0] == 'application/json':
                 return json.loads(r.text)['data']

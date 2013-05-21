@@ -8,7 +8,6 @@ import subprocess
 import functools
 import os.path
 
-
 from asana import asana
 
 from pprint import pprint
@@ -231,6 +230,7 @@ class AsanaApiCall(threading.Thread):
         #     self.result = False
 
             # self.view.window().run_command('exec', {'cmd': ['sh', 'script.sh'], 'quiet': False})
+
 class CommandThread(threading.Thread):
     def __init__(self, command, on_done, working_dir="", fallback_encoding="", **kwargs):
         threading.Thread.__init__(self)
