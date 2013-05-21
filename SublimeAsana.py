@@ -15,6 +15,7 @@ from pprint import pprint
 
 AsanaProjects = sublime.load_settings('AsanaProjects.sublime-settings')
 
+
 class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def run(self,edit,archive = False):
@@ -99,7 +100,8 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
 class getCurrentProjectCommand(sublime_plugin.TextCommand):
     def run(self,edit):
-        command = ['0: Create New Task','1: Show Tasks','2: Show Archive Tasks','3: Change Project','4: Update Project','5: Cancel']
+        command = ['0: Create New Task','1: Show Tasks','2: Show Completed Tasks','3: Change Project','5: Cancel']
+        # command = ['0: Create New Task','1: Show Tasks','2: Show Archive Tasks','3: Change Project','4: Update Project','5: Cancel']
         self.view.window().show_quick_panel(command, self.command_task)
 
     def command_task(self,index):
@@ -111,9 +113,9 @@ class getCurrentProjectCommand(sublime_plugin.TextCommand):
             self.view.window().run_command('get_asana_tasks',{"archive": True})
         elif index == 3 :
             self.view.window().run_command('set_asana_project')
+        # elif index == 4 :
+        #     sublime.message_dialog('Now under development')
         elif index == 4 :
-            sublime.message_dialog('Now under development')
-        elif index == 5 :
             self.on_done()
 
     def on_done(self,name=False):
@@ -128,21 +130,27 @@ class SetAsanaProjectCommand(sublime_plugin.TextCommand):
         thread.start()
 
     def show_quick_panel(self,projects):
+        pprint(projects)
         self.project_ids = []
         self.project_names = []
+        self.project_workspaces = []
 
         for project in projects:
             self.project_names.append(project[u'name'])
             self.project_ids.append(project[u'id'])
+            self.project_workspaces.append(project[u'workspace'][u'id'])
 
         self.view.window().show_quick_panel(self.project_names, self.save_project_id)
 
     def save_project_id(self,index):
+        if index == -1 :
+            return
         self.path = self.view.window().folders()[0]
 
         AsanaProjects.set(self.path, {
             'id':str(self.project_ids[index]),
             'name':str(self.project_names[index]),
+            'workspace':str(self.project_workspaces[index]),
         })
         sublime.save_settings('AsanaProjects.sublime-settings')
         self.view.window().run_command('get_asana_tasks')
@@ -154,14 +162,13 @@ class AddAsanaTaskCommand(sublime_plugin.TextCommand):
 
     def create_task(self,name):
         project_id = AsanaProjects.get(self.path).get('id')
-        thread = AsanaApiCall('create_task', [name,project_id], self.show_quick_panel)
+        project_workspace = AsanaProjects.get(self.path).get('workspace')
+        thread = AsanaApiCall('create_task', [name,project_id,project_workspace], self.show_quick_panel)
         thread.start()
 
     def show_quick_panel(self,name):
         sublime.status_message('Created: '+ name)
         self.view.window().run_command('get_asana_tasks')
-
-
 
 
 def main_thread(callback, *args, **kwargs):
@@ -183,14 +190,20 @@ def _make_text_safeish(text, fallback_encoding, method='decode'):
 class AsanaApiCall(threading.Thread):
     def __init__(self,command,args,callback):
         asana_api_key = sublime.active_window().active_view().settings().get('asana_api_key')
-        self.AsanaApi = asana.AsanaAPI( asana_api_key , debug=True)
-        self.command = command
-        self.args = args
-        self.callback = callback
-        threading.Thread.__init__(self)
+        if not asana_api_key :
+            sublime.error_message('You have to set asana_api_key in the Preferences.sublime-settings. folllowing { "asana_api_key" : "YOUR_API KEY" }')
+            self.AsanaApi = None
+        else :
+            self.AsanaApi = asana.AsanaAPI( asana_api_key , debug=True)
+            self.command = command
+            self.args = args
+            self.callback = callback
+            threading.Thread.__init__(self)
 
     def run(self):
-        # try:
+        if not self.AsanaApi:
+            return
+        try:
             if self.command == 'get_project_tasks':
                 tasks = self.AsanaApi.get_project_tasks(self.args)
                 main_thread(self.callback, tasks)
@@ -204,8 +217,7 @@ class AsanaApiCall(threading.Thread):
                 main_thread(self.callback,projects)
 
             elif self.command == 'create_task':
-                myspaces = self.AsanaApi.list_workspaces()
-                task = self.AsanaApi.create_task(self.args[0], myspaces[1]['id'])
+                task = self.AsanaApi.create_task(self.args[0], self.args[2])
                 self.AsanaApi.add_project_task(task[u'id'], self.args[1])
                 main_thread(self.callback,self.args[0])
 
@@ -222,10 +234,10 @@ class AsanaApiCall(threading.Thread):
                 main_thread(self.callback,task[u'name'])
 
             return
-        # except:
-        #     err = 'error'
-        #     sublime.error_message(err)
-        #     self.result = False
+        except:
+            err = 'error'
+            sublime.error_message(err)
+            self.result = False
 
             # self.view.window().run_command('exec', {'cmd': ['sh', 'script.sh'], 'quiet': False})
 

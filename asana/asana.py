@@ -157,14 +157,14 @@ class AsanaAPI(object):
         if workspace:
             return self._asana('workspaces/%d/projects' % workspace)
         else:
-            return self._asana('projects')
+            return self._asana('projects/?opt_fields=workspace,name')
 
     def get_project(self, project_id):
         """Get project
 
         :param project_id: id# of project
         """
-        return self._asana('projects/%d' % project_id)
+        return self._asana('projects/%d/' % project_id)
 
     def get_project_tasks(self, project_id):
         """Get project tasks
