@@ -32,8 +32,6 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
         else:
             self.view.window().run_command('set_asana_project')
 
-    def branch_done(self,ls):
-        sublime.message_dialog(str(ls))
 
     def show_quick_panel_task(self,tasks):
         if tasks != 'cache':

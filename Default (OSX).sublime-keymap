@@ -1,5 +1,5 @@
 [
-  { "keys": ["ctrl+a","ctrl+a"], "command": "get_asana_tasks" },
-  { "keys": ["ctrl+a","ctrl+i"], "command": "set_asana_project" },
-  { "keys": ["ctrl+a","ctrl+n"], "command": "add_asana_task" }
+  { "keys": ["ctrl+t","ctrl+t"], "command": "get_asana_tasks" },
+  { "keys": ["ctrl+t","ctrl+i"], "command": "set_asana_project" },
+  { "keys": ["ctrl+t","ctrl+n"], "command": "add_asana_task" }
 ]
