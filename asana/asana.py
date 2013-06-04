@@ -157,7 +157,7 @@ class AsanaAPI(object):
         if workspace:
             return self._asana('workspaces/%d/projects' % workspace)
         else:
-            return self._asana('projects/?opt_fields=workspace,name')
+            return self._asana('projects/?opt_fields=workspace,name,archived')
 
     def get_project(self, project_id):
         """Get project

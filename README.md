@@ -45,8 +45,6 @@ example key bind :
   { "keys": ["ctrl+t","ctrl+t"], "command": "get_asana_tasks" }
 </pre>
 
-<br>
-
 ## Licence
 
 The code is available at

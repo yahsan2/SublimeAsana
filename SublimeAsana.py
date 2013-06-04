@@ -19,7 +19,12 @@ AsanaProjects = sublime.load_settings('AsanaProjects.sublime-settings')
 class GetAsanaTasksCommand(sublime_plugin.TextCommand):
 
     def run(self,edit,archive = False):
-        self.path = self.view.window().folders()[0]
+        try:
+            self.path = self.view.window().folders()[0]
+        except:
+            sublime.status_message('Not project mode')
+            return
+
         self.archive = archive
         if AsanaProjects.has(self.path):
             project_id = AsanaProjects.get(self.path).get('id')
@@ -41,16 +46,20 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
                     self.task_ids.append(task[u'id'])
                     self.task_names.append(task[u'name'])
         if len(self.task_ids) > 0 :
+            pprint (self.task_names)
             self.view.window().show_quick_panel(self.task_names, self.show_quick_panel_select)
         else:
             sublime.status_message('Not exist tasks')
 
     def show_quick_panel_select(self,index):
-        if index == 0:
+        if index == -1:
+            return
+        elif index == 0:
             self.view.window().run_command('get_current_project')
             return
         self.current_task_id = self.task_ids[index]
         self.current_task_name = self.task_names[index]
+
         command = ['0: Back','1: Done','2: Done & Commit','3: Update','4: Cancel']
         self.view.window().show_quick_panel(command, self.command_task)
 
@@ -58,8 +67,12 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
         if index == 0 :
             self.show_quick_panel_task('cache')
         elif index == 1 or index == 2:
+            del self.task_ids[index]
+            del self.task_names[index]
+
             thread = AsanaApiCall('done_task', int(self.current_task_id), self.on_done)
             thread.start()
+
             if index == 2:
                 self.view.window().show_input_panel('Commit -am: ', self.current_task_name+' #'+str(self.current_task_id), self.git_commit, None, None)
         elif index == 3 :
@@ -97,10 +110,12 @@ class GetAsanaTasksCommand(sublime_plugin.TextCommand):
     def on_done(self,name=False):
         if name :
             sublime.status_message('Done '+ name)
+            self.show_quick_panel_task('cache')
+
 
 class getCurrentProjectCommand(sublime_plugin.TextCommand):
     def run(self,edit):
-        command = ['0: Create New Task','1: Show Tasks','2: Show Completed Tasks','3: Change Project','5: Cancel']
+        command = ['0: Create New Task','1: Show Tasks','2: Show Completed Tasks','3: Change Project','4: Cancel']
         # command = ['0: Create New Task','1: Show Tasks','2: Show Archive Tasks','3: Change Project','4: Update Project','5: Cancel']
         self.view.window().show_quick_panel(command, self.command_task)
 
@@ -130,15 +145,15 @@ class SetAsanaProjectCommand(sublime_plugin.TextCommand):
         thread.start()
 
     def show_quick_panel(self,projects):
-        pprint(projects)
         self.project_ids = []
         self.project_names = []
         self.project_workspaces = []
 
         for project in projects:
-            self.project_names.append(project[u'name'])
-            self.project_ids.append(project[u'id'])
-            self.project_workspaces.append(project[u'workspace'][u'id'])
+            if project[u'archived'] == False:
+                self.project_names.append(project[u'name'])
+                self.project_ids.append(project[u'id'])
+                self.project_workspaces.append(project[u'workspace'][u'id'])
 
         self.view.window().show_quick_panel(self.project_names, self.save_project_id)
 
